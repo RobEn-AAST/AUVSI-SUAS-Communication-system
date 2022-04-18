@@ -1,18 +1,20 @@
 import socket
-import ssl
+from SSL import SSL_CLIENT_WRAPPER
 
-host_addr = '192.168.1.3'
+host_addr = '127.0.0.1'
 host_port = 8082
 server_sni_hostname = 'Safty'
 server_cert = 'server.crt'
 client_cert = 'client.crt'
 client_key = 'client.key'
 
-context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=server_cert)
-context.load_cert_chain(certfile=client_cert, keyfile=client_key)
+ssl = SSL_CLIENT_WRAPPER(certificate=client_cert,
+                  key=client_key,
+                  server_certificate=server_cert,
+                  hostname=server_sni_hostname)
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-conn = context.wrap_socket(s, server_side=False, server_hostname=server_sni_hostname)
+conn = ssl.Initiate_Secure_Connection(s)
 conn.connect((host_addr, host_port))
 print("SSL established. Peer: {}".format(conn.getpeercert()))
 print("Sending: 'Hello, world!")

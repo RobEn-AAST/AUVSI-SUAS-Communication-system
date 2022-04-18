@@ -8,7 +8,6 @@ from threading import Thread, Lock
 import numpy as np
 from pymavlink.mavutil import mavlink_connection
 import logging
-from datetime import datetime
 
 ConnectionThreadLock = Lock()
 class ConnectionThread(Thread):
@@ -18,13 +17,13 @@ class ConnectionThread(Thread):
     
     def run(self):
         ConnectionThreadLock.acquire()
-        self.socket.__init__(ADDRESS = self.socket.ADDRESS)
+        self.socket.__init__(ADDRESS = self.socket.ADDRESS, Queue = self.Queue)
         logging.WARNING("Connection regained")
         ConnectionThreadLock.release()
 
 
 class UAV_CLIENT(socket):
-    def __init__(self, ADDRESS: str = '127.0.0.1', PORT: int = 5000):
+    def __init__(self, ADDRESS: str = '127.0.0.1', PORT: int = 5000, Queue = []):
         """
         Parameters
         ----------
@@ -34,7 +33,7 @@ class UAV_CLIENT(socket):
         PORT : int, optional
             Communication port (default is 5000)
         """
-        self.Queue = []
+        self.Queue = Queue
         super().__init__(AF_INET, SOCK_STREAM, IPPROTO_TCP)
         self.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         try:
@@ -97,7 +96,7 @@ class UAV_CLIENT(socket):
         self.close()
 
     
-#Driver code to test the program
+#Driver code to the program
 if __name__ == '__main__':
     logging.basicConfig(filename= 'AIclient.log', filemode= 'w',format='%(asctime)s-%(levelname)s-%(message)s')
     connection_string ='/dev/ttyACM0'
