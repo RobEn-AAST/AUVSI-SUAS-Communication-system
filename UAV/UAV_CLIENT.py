@@ -8,6 +8,7 @@ from threading import Thread, Lock
 import numpy as np
 from pymavlink.mavutil import mavlink_connection
 import logging
+from SSL import SSL_CLIENT_WRAPPER
 
 ConnectionThreadLock = Lock()
 class ConnectionThread(Thread):
@@ -22,8 +23,15 @@ class ConnectionThread(Thread):
         ConnectionThreadLock.release()
 
 
-class UAV_CLIENT(socket):
-    def __init__(self, ADDRESS: str = '127.0.0.1', PORT: int = 5000, Queue = []):
+class UAV_CLIENT():
+    def __init__(self,
+                 certificate : str = 'client.crt',
+                 key : str = 'client.key',
+                 server_certificate : str = 'server.crt',
+                 hostname : str = 'Safty',
+                 ADDRESS: str = '127.0.0.1',
+                 PORT: int = 5000,
+                 Queue = []):
         """
         Parameters
         ----------
@@ -33,13 +41,18 @@ class UAV_CLIENT(socket):
         PORT : int, optional
             Communication port (default is 5000)
         """
-        self.Queue = Queue
-        super().__init__(AF_INET, SOCK_STREAM, IPPROTO_TCP)
-        self.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
+        s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        ssl_wrapper = SSL_CLIENT_WRAPPER(certificate=certificate,
+                                         key=key,
+                                         server_certificate=server_certificate,
+                                         hostname=hostname)
+        self.__connection = ssl_wrapper.Initiate_Secure_Connection(s)
+        self.__Queue = Queue
         try:
             while True:
                 try:
-                    self.connect((ADDRESS, PORT)) # attempt 3 way hand shake for session establishment
+                    self.__connection.connect((ADDRESS, PORT)) # attempt 3 way hand shake for session establishment
                     break
                 except:
                     sleep(0.1)
@@ -47,7 +60,7 @@ class UAV_CLIENT(socket):
             self.initialized = True
             self.ADDRESS = ADDRESS
             self.PORT = PORT
-            self.settimeout(2)
+            self.__connection.settimeout(2)
         except ConnectionRefusedError as e:
             logging.WARNING("Failed to establish connection due to : " + str(e))
             self.initialized = False
@@ -61,21 +74,21 @@ class UAV_CLIENT(socket):
                     "image" : frame,
                     "finished" : Finished
                 }
-                self.Queue.append(mission)
-            out = self.Queue.pop(0)
+                self.__Queue.append(mission)
+            out = self.__Queue.pop(0)
             if not self.initialized:
                 if not (geolocation == None and image == None):
-                    self.Queue.append(mission)
+                    self.__Queue.append(mission)
                 return True
             Segments = pickle.dumps(out, 0)
             SegmentsNumber = len(Segments)
-            self.sendall(struct.pack(">L", SegmentsNumber) + Segments)
-            response = self.recv(1024)
+            self.__connection.sendall(struct.pack(">L", SegmentsNumber) + Segments)
+            response = self.__connection.recv(1024)
             if response == b'success':
                 return out["finished"]
         except Exception as exception:
-            self.Queue.append(out)
-            self.close()
+            self.__Queue.append(out)
+            self.__connection.close()
             self.initialized = False
             logging.WARNING("Connection failed due to : " + str(exception))
             logging.INFO("RE-establishing connection")
@@ -87,6 +100,7 @@ class UAV_CLIENT(socket):
         self.sendMission(geolocation = (0,0), image = np.zeros([512,512,1],dtype=np.uint8), Finished=True)
         self.clearQueue()
         self.initialized = False
+        
     def clearQueue(self):
         end = True
         while end:
