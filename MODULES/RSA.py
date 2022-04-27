@@ -1,14 +1,11 @@
-from Cryptodome.PublicKey.RSA import generate as generate_keys
+from Cryptodome.PublicKey.RSA import generate as generate_keys, import_key
 from Cryptodome.Cipher.PKCS1_OAEP import new as OAEP 
 
-
 class RSA_DECRYPTO():
-
     def __init__(self)-> None:
         key = generate_keys(3072)
-        private = key.export_key()
         self.__public = key.public_key().export_key()
-        self.__decrypto = OAEP(private)
+        self.__decrypto = OAEP(key)
     
     def get_public_key(self):
         return self.__public
@@ -19,8 +16,9 @@ class RSA_DECRYPTO():
     
 class RSA_ENCRYPTO():
     def __init__(self, public)-> None:
-        self.__public = public
-        self.__encrypto = OAEP(public)
+        key = import_key(public)
+        self.__public = key.export_key()
+        self.__encrypto = OAEP(key)
         
     def get_public_key(self):
         return self.__public
