@@ -1,0 +1,8 @@
+LatLon
+future
+lxml
+nose
+protobuf>=3.2,<=3.20
+pymavlink==2.4.14
+pyserial
+requests

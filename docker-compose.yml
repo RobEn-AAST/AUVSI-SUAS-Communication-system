@@ -1,0 +1,28 @@
+networks:
+  AUVSI-SUAS-Proxy-Network:
+    ipam:
+      config:
+        - subnet: 163.20.0.0/16
+
+services:
+  mavrpoxy:
+    build: 
+      context: .
+      dockerfile: MavProxy.Dockerfile
+    command: bash -c "mavproxy.py --master 0.0.0.0:14555 --out=tcpin:0.0.0.0:5763 --out=163.20.0.11:5750 --daemon"
+    ports:
+      - "127.0.0.1:5763:5763/tcp"
+      - "14555:14555/udp"
+    networks:
+      AUVSI-SUAS-Proxy-Network:
+        ipv4_address: 163.20.0.10
+  interop-relay:
+    build: 
+      context: .
+      dockerfile: InteropRelay.Dockerfile
+    command: python relay.py --username dragobots --password P@ssw0rd --url http://164.92.120.251:8000/ --MavProxy 0.0.0.0:5750
+    ports:
+      - "8000:8000"
+    networks:
+      AUVSI-SUAS-Proxy-Network:
+        ipv4_address: 163.20.0.11
