@@ -21,8 +21,6 @@ services:
       context: .
       dockerfile: InteropRelay.Dockerfile
     command: python relay.py --username dragobots --password P@ssw0rd --url http://164.92.120.251:8000/ --MavProxy 0.0.0.0:5750
-    ports:
-      - "8000:8000"
     networks:
       AUVSI-SUAS-Proxy-Network:
         ipv4_address: 163.20.0.11
