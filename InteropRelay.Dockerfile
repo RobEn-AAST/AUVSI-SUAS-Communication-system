@@ -2,16 +2,33 @@ FROM python:3.9
 
 ENV PYTHONUNBUFFERED=1
 
-ENV PROTOC_ZIP=protoc-3.13.0-linux-x86_64.zip
-
-RUN apt-get update && apt-get install -y unzip
-
-RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v3.13.0/$PROTOC_ZIP \
-    && unzip -o $PROTOC_ZIP -d /usr/local bin/protoc \
-    && unzip -o $PROTOC_ZIP -d /usr/local 'include/*' \ 
-    && rm -f $PROTOC_ZIP
-
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
+
+RUN pip install LatLon
+
+RUN pip install future
+
+RUN pip install lxml
+
+RUN pip install nose
+
+RUN pip install protobuf==3.20
+
+RUN pip install pymavlink==2.4.14
+
+RUN pip install pyserial
+
+RUN pip install requests
+
+COPY protoc-binaries/bin/protoc  /usr/local/bin/protoc
+
+COPY protoc-binaries/include/* /usr/local/include/*
+
+WORKDIR /home/interop/
+
+COPY interop-relay /home/interop/
+
+RUN python setup.py install
 
 RUN useradd -U -m interop
 
@@ -23,17 +40,9 @@ RUN echo "interop:interop" | chpasswd
 
 RUN echo "interop:interop" | chpasswd
 
-WORKDIR /home/interop/
-
-COPY interop-relay /home/interop/
-
 RUN chown -R interop /home/interop
 
-RUN python setup.py install
 
 USER interop
 
 RUN export PYTHONPATH=/usr/local/lib/python3.9/
-
-
-

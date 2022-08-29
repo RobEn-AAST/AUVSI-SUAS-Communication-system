@@ -5,20 +5,34 @@ networks:
         - subnet: 163.20.0.0/16
 
 services:
-  mavrpoxy:
+  mavproxy-rfd:
+    profiles: ["mavproxy-rfd"]
     build: 
       context: .
       dockerfile: MavProxy.Dockerfile
-    command: bash -c "mavproxy.py --master /dev/ttyUSB0 --out=tcpin:0.0.0.0:5763 --out=163.20.0.11:5750 --daemon"
+    command: bash -c "mavproxy.py --master /dev/ttyUSB0 --out=tcpin:0.0.0.0:5770 --out=163.20.0.12:5750 --daemon"
     ports:
-      - "127.0.0.1:5763:5763/tcp"
-      - "14555:14555/udp"
+      - "127.0.0.1:5770:5770/tcp"
     devices:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
     privileged: true
     networks:
       AUVSI-SUAS-Proxy-Network:
         ipv4_address: 163.20.0.10
+  
+  mavrpoxy-pi:
+    profiles: ["mavproxy-pi"]
+    build: 
+      context: .
+      dockerfile: MavProxy.Dockerfile
+    command: bash -c "mavproxy.py --master 0.0.0.0:14550 --out=tcpin:0.0.0.0:5770 --out=163.20.0.12:5750 --daemon"
+    ports:
+      - "127.0.0.1:5770:5770/tcp"
+      - "14550:14550/udp"
+    networks:
+      AUVSI-SUAS-Proxy-Network:
+        ipv4_address: 163.20.0.11
+  
   interop-relay:
     build: 
       context: .
@@ -26,4 +40,5 @@ services:
     command: python relay.py --username dragobots --password P@ssw0rd --url http://164.92.120.251:8000/ --MavProxy 0.0.0.0:5750
     networks:
       AUVSI-SUAS-Proxy-Network:
-        ipv4_address: 163.20.0.11
+        ipv4_address: 163.20.0.12
+    
