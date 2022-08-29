@@ -1,6 +1,0 @@
-[submodule "Introp-system-API"]
-	path = Introp-system-API
-	url = https://github.com/RobEn-AAST/Introp-system-API.git
-[submodule "UAV-Data-Transmission"]
-	path = UAV-Data-Transmission
-	url = https://github.com/RobEn-AAST/UAV-Data-Transmission.git

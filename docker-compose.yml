@@ -9,10 +9,13 @@ services:
     build: 
       context: .
       dockerfile: MavProxy.Dockerfile
-    command: bash -c "mavproxy.py --master 0.0.0.0:14555 --out=tcpin:0.0.0.0:5763 --out=163.20.0.11:5750 --daemon"
+    command: bash -c "mavproxy.py --master /dev/ttyUSB0 --out=tcpin:0.0.0.0:5763 --out=163.20.0.11:5750 --daemon"
     ports:
       - "127.0.0.1:5763:5763/tcp"
       - "14555:14555/udp"
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+    privileged: true
     networks:
       AUVSI-SUAS-Proxy-Network:
         ipv4_address: 163.20.0.10

@@ -29,20 +29,4 @@ RUN pip install numpy
 
 RUN pip install mavproxy
 
-RUN apk add sudo bash shadow
-
-RUN useradd -U -m mavproxy
-
-RUN usermod -aG wheel mavproxy
-
-RUN usermod --shell /bin/bash mavproxy
-
-RUN echo "mavproxy:mavproxy" | chpasswd
-
-RUN echo "mavproxy:mavproxy" | chpasswd
-
-WORKDIR /home/mavproxy/
-
-RUN chown -R mavproxy /home/mavproxy
-
-USER mavproxy
+RUN apk add sudo bash
