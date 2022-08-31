@@ -18,31 +18,38 @@ RUN pip install pymavlink==2.4.14
 
 RUN pip install pyserial
 
+RUN pip install empy
+
 RUN pip install requests
+
+RUN pip install dronekit
+
+RUN pip install flask
+
+RUN apt update -y && apt install -y libopencv-dev python3-opencv && pip install opencv-python
 
 COPY protoc-binaries/bin/protoc  /usr/local/bin/protoc
 
 COPY protoc-binaries/include/* /usr/local/include/*
 
-WORKDIR /home/interop/
+WORKDIR /home/proxyServer/
 
-COPY interop-relay /home/interop/
+COPY proxyServer /home/proxyServer/
 
 RUN python setup.py install
 
-RUN useradd -U -m interop
+RUN useradd -U -m proxyServer
 
-RUN usermod -aG sudo interop
+RUN usermod -aG sudo proxyServer
 
-RUN usermod --shell /bin/bash interop
+RUN usermod --shell /bin/bash proxyServer
 
-RUN echo "interop:interop" | chpasswd
+RUN echo "proxyServer:proxyServer" | chpasswd
 
-RUN echo "interop:interop" | chpasswd
+RUN echo "proxyServer:proxyServer" | chpasswd
 
-RUN chown -R interop /home/interop
+RUN chown -R proxyServer /home/proxyServer
 
-
-USER interop
+USER proxyServer
 
 RUN export PYTHONPATH=/usr/local/lib/python3.9/

@@ -1,23 +1,17 @@
 #!/usr/bin/env python3
 # CLI for interacting with interop server.
-
 from __future__ import print_function
-import argparse
-import getpass
 import logging
-import sys
 import time
 import threading
 from pymavlink import mavutil
 from auvsi_suas.client.client import AsyncClient
 from auvsi_suas.proto.interop_api_pb2 import Telemetry
-
-
+from configparser import ConfigParser
 
 
 class MavlinkProxy(object):
     """Proxies mavlink packets to the interop server.
-
     Uses an asynchronous client to enable multiple telemetry to be concurrently
     forwarded so throughput is limited by RTT of the request. Prints request
     rate.
@@ -118,33 +112,13 @@ def mavlink(client, MavProxy):
 
 
 
-
-
 if __name__ == '__main__':
     logging.basicConfig(filename= 'AIclient.log', filemode= 'a',format='%(asctime)s-%(levelname)s-%(message)s')
     # Parse command line args.
-    parser = argparse.ArgumentParser(description='AUVSI SUAS Interop CLI.')
-    parser.add_argument('--url',
-                        required=True,
-                        help='URL for interoperability.')
-    
-    parser.add_argument('--password', help='Password for interoperability.')
-    
-    parser.add_argument('--username',
-                        required=True,
-                        help='Username for interoperability.')
-    
-    parser.add_argument('--MavProxy',
-                        required=True,
-                        help='MavProxy Entry Point')
-
-    # Parse args, get password if not provided.
-    args = parser.parse_args()
-    if args.password:
-        password = args.password
-    else:
-        password = getpass.getpass('Interoperability Password: ')
-
+    config = ConfigParser()
+    config.readfp(open('/home/interop/config/system.config', 'r'))
+    Interop_config = config["Interop"]
+    MavProxy_config = config["MavProxy"]
     # Create client and dispatch subcommand.
-    client = AsyncClient(args.url, args.username, password)
-    mavlink(client, args.MavProxy)
+    client = AsyncClient(Interop_config["url"], Interop_config["username"], Interop_config["password"])
+    mavlink(client, MavProxy_config["url"])

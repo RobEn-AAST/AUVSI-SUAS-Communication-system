@@ -20,38 +20,14 @@ class interop_client(object):
         500 : ("The server encountered an internal error","report what happened to the judges")
     }
 
-    def __message(e):
-        code_string = findall("\d{3}\s{1}Error",str(e))[0]
-        code_string = findall("\d{3}",code_string)[0]
-        error_code = int(code_string)
-        problem,solution = interop_client.__resolve_responses(error_code)
-        print("exception raised !!!")
-        print("error code : " + code_string)
-        print("problem : " + problem)
-        print("solution : " + solution)
-        exit()
-
-    def __handle_with(handler):
-        def decorator(func):
-            @functools.wraps(func)
-            def wrapper(*args, **kwargs):
-                try:
-                    return func(*args, **kwargs)
-                except Exception as e:
-                    return handler(e)
-            return wrapper
-        return decorator
-
-    @__handle_with(__message)
     def __init__(self,
-                 ipaddress,
-                 port,
+                 url,
                  username,
                  password,                 
                  max_concurrent=128,
                  timeout=10,
                  max_retries=10):
-        self.url ='http://' + ipaddress + ':' + port
+        self.url = url
         self.username = username
         self.password = password
         self.timeout = timeout
@@ -70,16 +46,11 @@ class interop_client(object):
         result = request.urlopen("http://" + self.ipadress + ":" + self.port).getcode()
         return True if result == 200 else False, result
 
-    @staticmethod
-    def __resolve_responses(response_code):
-        return interop_client.__responses[response_code]
 
-    @__handle_with(__message)
     def get_teams(self):
         return self.__this_client.get_teams()
 
-    @__handle_with(__message)
-    def get_mission(self,mission, home):
+    def get_mission(self, mission):
         r = self.session.get(self.url + '/api/missions/' + str(mission))
         response = json.loads(r.text)
         waypoints = []
@@ -87,7 +58,6 @@ class interop_client(object):
         obstacles = []
         flyZones = []
         searchArea = []
-        waypoints.append("0\t1\t0\t16\t0\t0\t0\t0\t\t" + str(home["latitude"]) + "\t" + str(home["longitude"]) + "\t" + str(home["altitude"]) + "\t1")
         if(type(response["waypoints"]) is dict):
             waypoints.append(str(counter) + "\t0\t0\t16\t0\t0\t0\t0\t" + str(response["waypoints"]["latitude"]) + "\t" + str(response["waypoints"]["longitude"]) + "\t" + str(response["waypoints"]["altitude"]) + "\t1")
         else:
@@ -120,8 +90,15 @@ class interop_client(object):
     def send_telemtry(self, telem):
         self.session.post(self.url + '/api/telemetry', data=json_format.MessageToJson(telem))
 
-    @__handle_with(__message)
-    def send_standard_object(self,mission,geolocation,orientation,shape,shape_color,letter,letter_color,image):
+    def send_standard_object(self,
+    mission,
+    geolocation,
+    text,
+    image,
+    orientation = None,
+    shape = None,
+    shape_color = None,
+    text_color= None):
         object_of_interset = interop_api_pb2.Odlc()
         object_of_interset.type = interop_api_pb2.Odlc.STANDARD
         object_of_interset.latitude = geolocation[0]
@@ -129,22 +106,16 @@ class interop_client(object):
         object_of_interset.orientation = orientation
         object_of_interset.shape = shape
         object_of_interset.shape_color = shape_color
-        object_of_interset.alphanumeric = letter
-        object_of_interset.alphanumeric_color = letter_color
+        object_of_interset.alphanumeric = text
+        object_of_interset.alphanumeric_color = text_color
         object_of_interset.autonomous = True
         object_of_interset.mission = mission
         object_of_interset = self.__this_client.post_odlc(object_of_interset)
         r = self.session.post(self.url + '/api/odlcs', data=json_format.MessageToJson(object_of_interset))
         object_of_interset = interop_api_pb2.Odlc()
         json_format.Parse(r.text, object_of_interset)
-        _, im_buf_arr = imencode(".jpeg", image)
-        byte_im = im_buf_arr.tobytes()
-        # imwrite(str(mission) + ".jpg", image)
-        # with open(str(mission) + ".jpg", 'rb') as f:
-        #     image_data = f.read()
-        self.session.put('/api/odlcs/%d/image' % object_of_interset.id, data=byte_im)
+        self.session.put('/api/odlcs/%d/image' % object_of_interset.id, data=image)
 
-    @__handle_with(__message)
     def send_emergant_object(self,mission,latitude,longitude,image_path,description = None):
         object_of_interset = interop_api_pb2.Odlc()
         object_of_interset.mission = mission
@@ -159,23 +130,8 @@ class interop_client(object):
             image_data = f.read()
             self.__this_client.put_odlc_image(object_of_interset.id, image_data)
 
-    @__handle_with(__message)
-    def send_sample(self):
-        object_of_interset = interop_api_pb2.Odlc()
-        object_of_interset.type = interop_api_pb2.Odlc.STANDARD
-        object_of_interset.latitude = 38
-        object_of_interset.longitude = -76
-        object_of_interset.orientation = interop_api_pb2.Odlc.N
-        object_of_interset.shape = interop_api_pb2.Odlc.SQUARE
-        object_of_interset.shape_color = interop_api_pb2.Odlc.GREEN
-        object_of_interset.alphanumeric = 'C'
-        object_of_interset.alphanumeric_color = interop_api_pb2.Odlc.WHITE
-        object_of_interset.autonomous = True
-        object_of_interset.mission = 1
-        object_of_interset = self.__this_client.post_odlc(object_of_interset)        
-        with open('1.jpg', 'rb') as f:
-            image_data = f.read()
-            self.__this_client.put_odlc_image(object_of_interset.id, image_data)
+
+
 if __name__ == '__main__':
     home = {
         "latitude": 0,
@@ -183,7 +139,7 @@ if __name__ == '__main__':
         "altitude": 0
     }
     myclient = interop_client('164.92.120.251','8000','dragobots','P@ssw0rd') 
-    waypoints, payloads, obstacles, flyZones, searchArea = myclient.get_mission(1, home)
+    waypoints, payloads, obstacles, flyZones, searchArea = myclient.get_mission(1)
     with open('Waypoints.txt', 'w') as f:
         f.write('QGC WPL 110')
         f.write('\n')

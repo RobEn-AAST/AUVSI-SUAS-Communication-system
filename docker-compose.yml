@@ -5,40 +5,42 @@ networks:
         - subnet: 163.20.0.0/16
 
 services:
-  mavproxy-rfd:
-    profiles: ["mavproxy-rfd"]
+  mavproxy:
     build: 
       context: .
-      dockerfile: MavProxy.Dockerfile
-    command: bash -c "mavproxy.py --master /dev/ttyUSB0 --out=tcpin:0.0.0.0:5770 --out=163.20.0.12:5750 --daemon"
+      dockerfile: dockerFiles/MavProxy.Dockerfile
+    command: bash -c "mavproxy.py --master=0.0.0.0:14555  --out=163.20.0.11:5750 --out=udp:192.168.1.140:14550 --out=udp:192.168.1.130:14550 --daemon"
     ports:
-      - "127.0.0.1:5770:5770/tcp"
-    devices:
-      - "/dev/ttyUSB0:/dev/ttyUSB0"
-    privileged: true
-    networks:
-      AUVSI-SUAS-Proxy-Network:
-        ipv4_address: 163.20.0.10
-  
-  mavrpoxy-pi:
-    profiles: ["mavproxy-pi"]
-    build: 
-      context: .
-      dockerfile: MavProxy.Dockerfile
-    command: bash -c "mavproxy.py --master 0.0.0.0:14550 --out=tcpin:0.0.0.0:5770 --out=163.20.0.12:5750 --daemon"
-    ports:
-      - "127.0.0.1:5770:5770/tcp"
+      - "5770:5770/tcp"
+      - "14555:14555/udp"
       - "14550:14550/udp"
     networks:
       AUVSI-SUAS-Proxy-Network:
-        ipv4_address: 163.20.0.11
-  
+        ipv4_address: 163.20.0.10
   interop-relay:
     build: 
       context: .
-      dockerfile: InteropRelay.Dockerfile
-    command: python relay.py --username testuser --password testpass --url http://192.168.1.100:8000/ --MavProxy 0.0.0.0:5750
+      dockerfile: dockerFiles/InteropRelay.Dockerfile
+    command: python relay.py
+    volumes:
+      - ./interop-relay/relay.py:/home/interop/relay.py
+      - ./config:/home/interop/config
+    networks:
+      AUVSI-SUAS-Proxy-Network:
+        ipv4_address: 163.20.0.11
+  proxy-server:
+    build:
+      context: .
+      dockerfile: dockerFiles/ProxyServer.Dockerfile
+    command: python server.py
+    ports:
+      - "80:5000/tcp"
+    volumes:
+      - ./proxyServer/server.py:/home/proxyServer/server.py
+      - ./proxyServer/interop.py:/home/proxyServer/interop.py
+      - ./config:/home/proxyServer/config
+      - ./UAV-Data-Transmission/missionPool:/home/proxyServer/missionPool
+      - ./proxyServer/files:/home/proxyServer/files
     networks:
       AUVSI-SUAS-Proxy-Network:
         ipv4_address: 163.20.0.12
-    

@@ -34,15 +34,13 @@ class clean(_clean):
 
 
 if __name__ == '__main__':
-    reqs = []
-    with open('requirements.txt', 'r') as f:
-        reqs = f.readlines()
+
 
     setuptools.setup(
         name='auvsi_suas',
-        description='AUVSI SUAS interoperability client library.',
+        description='AUVSI SUAS interoperability live location sharing library',
         license='Apache 2.0',
         packages=setuptools.find_packages(),
         cmdclass = { 'clean': clean, 'build_py': build_py },
-        install_requires=reqs,
-    )  # yapf: disable
+        install_requires=[],
+    )
