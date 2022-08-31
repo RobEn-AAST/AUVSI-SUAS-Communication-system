@@ -6,8 +6,7 @@ from SSL import SSL_SERVER_WRAPPER
 import logging
 from ssl import SSLZeroReturnError, SSLEOFError
 from threading import Thread
-# from pymavlink.mavutil import mavlink_connection
-
+from pymavlink.mavutil import mavlink_connection
 class ConnectionThread(Thread):
     def __init__(self, UAV_SERVER):
         Thread.__init__(self)
@@ -26,7 +25,7 @@ class UAV_SERVER():
                  certificate : str = 'server.crt',
                  key : str = 'server.key',
                  clients_certificates: str = 'client.crt',
-                 PORT = 5000,
+                 PORT = 7500,
                  isInitial = True):
         if isInitial:
             self.__Queue = []
@@ -51,6 +50,7 @@ class UAV_SERVER():
         try:
             UnSecureConnection, self.FROM = self.__socket.accept() # accept 3 way hand shake for session establishment
             self.__conn_image = self.__ssl_wrapper.Initiate_Secure_Connection(UnSecureConnection)
+            self.__conn_image.settimeout(2)
             self.FROM = self.FROM[0]
             self.initialized = True
             print("3-way TCP Hand shake established with PI (" + self.FROM +") on port : " + str(PORT))    
@@ -91,6 +91,7 @@ class UAV_SERVER():
             new_connection = ConnectionThread(self)
             new_connection.start()
             self.initialized = False
+        print("ok")
         return True
     
     def sendMission(self, geolocation, image):
@@ -126,25 +127,25 @@ class UAV_SERVER():
 
 if __name__ == '__main__':
     logging.basicConfig(filename= 'AIclient.log', filemode= 'a',format='%(asctime)s-%(levelname)s-%(message)s')
-    # connection_string ='127.0.0.1:4550'
-    # logging.INFO("Connecting to PIX-HAWK on internal port= " + connection_string + " with baud= 57600")
-    # vehicle = mavlink_connection(device= connection_string, baud= 57600)
-    # logging.INFO("The PIX-HAWK has been connected successfully")
+    connection_string ='/dev/ttyACM0'
+    logging.info("Connecting to PIX-HAWK on serial port= " + connection_string + " with baud= 115200")
+    vehicle = mavlink_connection(device= connection_string, baud= 115200)
+    logging.info("The PIX-HAWK has been connected successfully")
     logging.info("Connecting to the ground station on PORT= 5000")
     mysocket = UAV_SERVER()
     logging.info("The ground station has been connected successfully")
-    cap = cv2.VideoCapture("sample.mp4")
+    cap = cv2.VideoCapture(0)
     logging.info("Camera stream has been captured")
     loop = True
     coordinates = (0,0)
     while loop:
         ret, frame = cap.read()
-        # coordinates = vehicle.location()
-        # geolocation = coordinates.split(",")
-        # geolocation = map(lambda x : float(x[4:]), coordinates)
-        # coordinates = list(coordinates)
+        coordinates = vehicle.location()
+        geolocation = coordinates.split(",")
+        geolocation = map(lambda x : float(x[4:]), coordinates)
+        coordinates = list(coordinates)
         if ret:
-            loop = mysocket.sendMission((0,0), frame)
+            loop = mysocket.sendMission(coordinates, frame)
             if loop:
                 logging.info("Frame with location= { " + str(coordinates) + " } has been sent to the ground station")
         else:

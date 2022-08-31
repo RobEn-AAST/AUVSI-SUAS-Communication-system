@@ -95,10 +95,10 @@ class interop_client(object):
     geolocation,
     text,
     image,
-    orientation = None,
-    shape = None,
-    shape_color = None,
-    text_color= None):
+    orientation = interop_api_pb2.Odlc.N,
+    shape = interop_api_pb2.Odlc.SQUARE,
+    shape_color = interop_api_pb2.Odlc.BLACK,
+    text_color= interop_api_pb2.Odlc.BLACK):
         object_of_interset = interop_api_pb2.Odlc()
         object_of_interset.type = interop_api_pb2.Odlc.STANDARD
         object_of_interset.latitude = geolocation[0]
@@ -110,11 +110,11 @@ class interop_client(object):
         object_of_interset.alphanumeric_color = text_color
         object_of_interset.autonomous = True
         object_of_interset.mission = mission
-        object_of_interset = self.__this_client.post_odlc(object_of_interset)
+        #object_of_interset = self.__this_client.post_odlc(object_of_interset)
         r = self.session.post(self.url + '/api/odlcs', data=json_format.MessageToJson(object_of_interset))
-        object_of_interset = interop_api_pb2.Odlc()
-        json_format.Parse(r.text, object_of_interset)
-        self.session.put('/api/odlcs/%d/image' % object_of_interset.id, data=image)
+        res = interop_api_pb2.Odlc()
+        json_format.Parse(r.text, res)
+        self.session.put(self.url + '/api/odlcs/%d/image' % res.id, data=image)
 
     def send_emergant_object(self,mission,latitude,longitude,image_path,description = None):
         object_of_interset = interop_api_pb2.Odlc()

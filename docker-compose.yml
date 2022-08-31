@@ -9,7 +9,7 @@ services:
     build: 
       context: .
       dockerfile: dockerFiles/MavProxy.Dockerfile
-    command: bash -c "mavproxy.py --master=0.0.0.0:14555  --out=163.20.0.11:5750 --out=udp:192.168.1.140:14550 --out=udp:192.168.1.130:14550 --daemon"
+    command: bash -c "mavproxy.py --master=0.0.0.0:14555 --out=tcpin:0.0.0.0:5770 --out=163.20.0.11:5750 --out=163.20.0.12:5750 --out=udp:192.168.1.140:14550 --out=udp:192.168.1.130:14550 --daemon"
     ports:
       - "5770:5770/tcp"
       - "14555:14555/udp"
@@ -32,7 +32,7 @@ services:
     build:
       context: .
       dockerfile: dockerFiles/ProxyServer.Dockerfile
-    command: python server.py
+    command: python server.py 
     ports:
       - "80:5000/tcp"
     volumes:
@@ -41,6 +41,7 @@ services:
       - ./config:/home/proxyServer/config
       - ./UAV-Data-Transmission/missionPool:/home/proxyServer/missionPool
       - ./proxyServer/files:/home/proxyServer/files
+      - ./control:/home/proxyServer/control
     networks:
       AUVSI-SUAS-Proxy-Network:
         ipv4_address: 163.20.0.12

@@ -1,0 +1,21 @@
+Home Location:
+home_lat = 29.825973140517
+home_long = 31.3282113522291
+home_ASL = 41.1280685026753
+
+Bearing = 315
+
+Altitude = 70
+
+Files:
+waypoints_file = "Waypoints"
+obstacles_file = "Obstacles"
+payloads_file = "Payloads"
+
+Aircraft's_Velocity = 25
+Aircraft's_Altitude = 70
+Wind_Speed = 0
+Wind_Bearing = 225
+
+Take_off_angle = 30
+Take_off_alt = 45

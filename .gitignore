@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+UAV-Data-Transmission/missionPool/*
+UAV-Data-Transmission/images/*
+proxyServer/files/*
