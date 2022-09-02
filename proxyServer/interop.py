@@ -58,6 +58,21 @@ class interop_client(object):
         obstacles = []
         flyZones = []
         searchArea = []
+        with open("/home/proxyServer/files/Data.txt","r") as data:
+            for ln in data:
+                if ln.startswith("home_lat"):
+                    x = ln.split(" ")
+                    home_lat = float(x[2])
+
+                if ln.startswith("home_long"):
+                    x = ln.split(" ")
+                    home_long = float(x[2])
+
+                if ln.startswith("home_ASL"):
+                    x = ln.split(" ")
+                    home_ASL = float(x[2])
+            waypoints.append(f"QGC WPL 110\n0\t1\t0\t16\t0\t0\t0\t0\t{home_lat}\t{home_long}\t{home_ASL}\t1") # Current Home Location
+
         if(type(response["waypoints"]) is dict):
             waypoints.append(str(counter) + "\t0\t0\t16\t0\t0\t0\t0\t" + str(response["waypoints"]["latitude"]) + "\t" + str(response["waypoints"]["longitude"]) + "\t" + str(response["waypoints"]["altitude"]) + "\t1")
         else:

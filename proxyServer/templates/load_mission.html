@@ -1,0 +1,23 @@
+
+<!DOCTYPE html>
+<html>
+<body>
+    <h3>RobEn</h3>
+    <form method="post" action="/startmission/">
+        <label for="mission">Mission number:
+        </label><br>
+        <input type="number" name="mission"
+                            id="mission">
+        <br><br>
+        <label for="type">Mission Type:</label>
+        <br>
+        <select name="type" id="type">
+            <option value="0">Mission_1_Payload</option>
+            <option value="1">Mission_2_Image</option>
+            <option value="2">Mission_3_Endurance</option>
+        </select>
+        <br><br>
+        <input type="submit" value="Start Mission">
+    </form>
+</body>
+</html>

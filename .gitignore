@@ -129,4 +129,4 @@ dmypy.json
 .pyre/
 UAV-Data-Transmission/missionPool/*
 UAV-Data-Transmission/images/*
-proxyServer/files/*
+logs/*

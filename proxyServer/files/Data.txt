@@ -11,11 +11,19 @@ Files:
 waypoints_file = "Waypoints"
 obstacles_file = "Obstacles"
 payloads_file = "Payloads"
+searchgrid_file = "SearchGrid"
 
-Aircraft's_Velocity = 25
+Aircraft's_Velocity = 20
 Aircraft's_Altitude = 70
-Wind_Speed = 0
-Wind_Bearing = 225
+Wind_Speed = 5
+Wind_Bearing = 180
 
 Take_off_angle = 30
 Take_off_alt = 45
+
+Safe_distance = 2
+
+Servo_No = 12
+PWM_value = 2500
+
+Survey_Altitude = 60

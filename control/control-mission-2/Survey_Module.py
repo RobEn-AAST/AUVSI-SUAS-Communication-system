@@ -1,8 +1,8 @@
 import math
-def payload_drop_off(waypoints_file,payloads_file):
+def survey_search_grid(waypoints_file, searchgrid_file):
     #waypoints_file = 'Waypoints'
-    #payloads_file = 'Payloads'
-    R = 6371000.0
+    #searchgrid_file = 'SearchGrid'
+    R = 6371000.0  #Earth radius in meters
     with open("/home/proxyServer/files/Data.txt","r") as data:
         for ln in data:
             if ln.startswith("home_lat"):
@@ -25,33 +25,17 @@ def payload_drop_off(waypoints_file,payloads_file):
                 x = ln.split(" ")
                 alt = float(x[2])
 
-            if ln.startswith("Aircraft's_Velocity"):
-                x = ln.split(" ")
-                v_plane = float(x[2])
-
-            if ln.startswith("Aircraft's_Altitude"):
-                x = ln.split(" ")
-                s = float(x[2])
-
-            if ln.startswith("Wind_Speed"):
-                x = ln.split(" ")
-                w = float(x[2])
-
-            if ln.startswith("Wind_Bearing"):
-                x = ln.split(" ")
-                wind_brng = float(x[2])
-
             if ln.startswith("Take_off_angle"):
                 x = ln.split(" ")
                 takeoff_angle = float(x[2])
 
-            if ln.startswith("Servo_No"):
+            if ln.startswith("Take_off_alt"):
                 x = ln.split(" ")
-                Servo_No = float(x[2])
+                takeoff_alt = float(x[2])
 
-            if ln.startswith("PWM_value"):
+            if ln.startswith("Survey_Altitude"):
                 x = ln.split(" ")
-                PWM_value = float(x[2])
+                survey_alt = float(x[2])
 
     class automission(object):
         # docstring for automission
@@ -87,11 +71,7 @@ def payload_drop_off(waypoints_file,payloads_file):
             takeoff_id = 22
             self.param_to_mcommand(0, 3, takeoff_id, angle, 0, 0, 0, lat, lon, alt, 1)
 
-        def DO_SET_SERVO(self, SerNo, PWM, lat, lon, alt):
-            do_set_servo_id = 183
-            self.param_to_mcommand(0, 3, do_set_servo_id, SerNo, PWM, 0, 0, lat, lon, alt, 1)
-
-        def write(self, name='Waypoints+Payloads'):
+        def write(self, name='Survey'):
             # saves final command list mlist as WP file.
             # Missionplanner can direcly open this text document in flight plan / load WP file button
             # open(str(name)+".waypoints", 'w').close()
@@ -125,10 +105,10 @@ def payload_drop_off(waypoints_file,payloads_file):
         xlist = i.split() #split waypoint lines to get lat and long
         return xlist[8], xlist[9], xlist[10] #lat[8] long[9] alt[10]
 
-    def Air_Drop_Coordinates(index, listname):
+    def SearchGrid_Coordinates(index, listname):
         i = listname[index]
-        xlist = i.split(',') ##split payload drop lines to get lat, long and radius
-        return xlist[0], xlist[1]
+        xlist = i.split(',') #split obstacle lines to get lat, long and radius
+        return xlist[0].strip(), xlist[1].strip() #lat[0] long[1] alt[2]
 
     def Convert(lat, lon): #Convert LAT & LONG from degree to radian
         lat = float(lat) * math.pi / 180
@@ -150,6 +130,15 @@ def payload_drop_off(waypoints_file,payloads_file):
         d = R * c
         return (d)
 
+    def get_bearing(lat1, long1, lat2, long2): #get bearing between 2 points
+        lat1_r, long1_r = Convert(lat1, long1)
+        lat2_r, long2_r = Convert(lat2, long2)
+        y = math.sin(long2_r - long1_r) * math.cos(lat2_r)
+        x = math.cos(lat1_r) * math.sin(lat2_r) - math.sin(lat1_r) * math.cos(lat2_r) * math.cos(long2_r - long1_r)
+        i = math.atan2(y, x)
+        bearing = (i * 180 / math.pi + 360) % 360
+        return bearing
+
     def new_waypoint(lat1, long1, d, brng): #Calculate new waypoint using waypoint, distance and bearing
         brng = brng * (math.pi/180)
         lat1_r, long1_r = Convert(lat1, long1)
@@ -159,129 +148,30 @@ def payload_drop_off(waypoints_file,payloads_file):
         brng = brng * (180/math.pi)
         return lat2, long2
 
-    def add_PL_waypoints(LatPL, LongPL, d_drop):
-        brng = wind_brng
-        d_wp = 30
-        Lat_drop,Long_drop = new_waypoint(LatPL,LongPL,d_drop,brng)
-        wp3_lat,wp3_long = new_waypoint(Lat_drop,Long_drop,d_wp,brng)
-        wp2_lat,wp2_long = new_waypoint(wp3_lat,wp3_long,d_wp,brng)
-        wp1_lat,wp1_long = new_waypoint(wp2_lat,wp2_long,d_wp,brng + 90)
-
-        my_mission.waypoint(wp1_lat,wp1_long, alt)
-        my_mission.waypoint(wp2_lat,wp2_long, alt)
-        my_mission.waypoint(wp3_lat,wp3_long, alt)
-        my_mission.waypoint(Lat_drop,Long_drop, alt)
-        my_mission.DO_SET_SERVO(Servo_No, PWM_value, Lat_drop, Long_drop, alt)
-
-    def payload_drop_eq (v_plane, s, w):
-        g = 9.81 #Gravity
-        PL_mass = 0.5 #Payload's Mass (kg)
-        PL_mass_lbs = 2.20462262*PL_mass #Payload's Mass (lbs)
-        PL_d = 0.07 #Payload's diameter
-        PL_dsq = PL_d*PL_d #Payload's diameter squared
-        PL_dsqf = PL_dsq*10.7639 #Payload's diameter squared (ft)
-        PL_area = 0.001442 #Payload's Area (m^2)
-        Drag_coeff = 0.47 #Coefficient of Drag
-        roh = 1.275 #Density of air
-        muz_v = v_plane*3.28084 #Muzzle speed (ft/s)
-
-        x=0.0
-        y=0.0
-        z = 0.0
-
-        v_z=0.0
-        a_z=0
-
-        fdz = 0.0
-        fg = 0.0
-
-        inc = 0.0
-        time=0.0
-
-        f_sum=0.0
-
-        # at z-axi.s
-        while ( z <= s ):
-            f_sum = (0.5*roh*v_z*v_z*Drag_coeff*PL_area) + (PL_mass*g) # net forces= drag + force gravity
-            a_z=f_sum/PL_mass
-            z=z+v_z*0.01+0.5*a_z*0.01*0.01
-            v_z = v_z + a_z * 0.01
-            inc=inc+0.01
-
-        #at x-axis direction
-        time = inc
-        v_proj=v_plane
-        fdx=-0.5*roh*PL_area*Drag_coeff*v_proj*v_proj
-        a=fdx/PL_mass
-
-        while (inc >= 0):
-            v_proj=v_proj+a*0.01
-            fdx=-0.5*roh*PL_area*Drag_coeff*v_proj*v_proj
-            a=fdx/PL_mass
-            x=x+v_proj*0.01+0.5*(0.01*0.01)*a
-            inc = inc - 0.01
-
-        #print("time =",time)
-
-        #at y-axis
-        t=0.01
-        y=0.0
-        vy=0.0
-        while (t<=time):
-            # a=(0.5*roh*w_meter*w_meter*PL_area*Drag_coeff)/PL_mass+0.5*roh*vy*vy*PL_area*Drag_coeff/PL_mass
-            # vy=vy+a*t
-            y = y + (0.3048*0.000067*w*(PL_dsqf*PL_dsqf)*t*t*muz_v*Drag_coeff)/PL_mass
-            t=t+0.01
-
-        #print("x =",x)
-        #print("y =",y)
-        return x, y
-
-
-    drop_x, drop_y = payload_drop_eq (v_plane, s, w)
-
     my_mission = automission('plane')
     WpsList, WpsNo = WP_FileList(waypoints_file)
-    PL_List, PL_No = FileList(payloads_file)
+    GridList, GridNo = FileList(searchgrid_file)
 
-    pll =[]
-    min_id_wp = []
-    for x in range (PL_No + 1):
-        id_wp = []
-        dist = []
-        PL_Lat, PL_Long = Air_Drop_Coordinates(x, PL_List)
-        pll.append(x)
-
-        for y in range (WpsNo + 1):
-            LatA, LongA, AltA = Waypoint_Coordinates(y,WpsList) #get coordinates of first waypoint
-            d_PL_Wp = distance(PL_Lat,PL_Long,LatA,LongA)
-            dist.append(d_PL_Wp)
-            id_wp.append(y)
-        wp_dist = [list(x) for x in zip(id_wp, dist)]
-        #print(wp_dist)
-
-        for distt in sorted(wp_dist,key=lambda l:l[1]):
-            min_dist = distt[1]
-            min_id_wp.append(distt[0])
-            break
-        #print(min_dist)
-        #print(min_id_wp,'\n')
-
-    min_pl_wp = [list(x) for x in zip(pll, min_id_wp)]
-    #print(min_pl_wp)
-
-    min_pl_wp_sort = sorted(min_pl_wp,key=lambda l:l[1])
-    #print(min_pl_wp_sort)
+    min_y = 0
+    for x in range(GridNo + 1):
+        GridLat, GridLong = SearchGrid_Coordinates(x, GridList)
+        for y in range(WpsNo + 1):
+            LatA, LongA, AltA = Waypoint_Coordinates(y, WpsList) #get coordinates of first waypoint
+            dist = distance(LatA, LongA, GridLat, GridLong)
+            if y == 0:
+                min_dist = dist
+            if dist < min_dist:
+                min_dist = dist
+                min_y = y
 
     LatA, LongA, AltA = Waypoint_Coordinates(0, WpsList) #get coordinates of first waypoint
     my_mission.takeoff(takeoff_angle, LatA, LongA, AltA)
     for d in range (1, WpsNo + 1):
         LatB, LongB, AltB = Waypoint_Coordinates(d, WpsList) #get coordinates of second waypoint
         my_mission.waypoint(LatB, LongB, AltB)
-        for f in min_pl_wp_sort:
-            if d == f[1]:
-                PL_Lat, PL_Long = Air_Drop_Coordinates(f[0], PL_List)
-                add_PL_waypoints(PL_Lat, PL_Long, drop_x)
-
+        if d == min_y:
+            for i in range(GridNo + 1):
+                GridLat, GridLong = SearchGrid_Coordinates(i, GridList)
+                my_mission.waypoint(GridLat, GridLong, survey_alt)
     my_mission.write()
-    return 'Waypoints+Payloads'
+    return 'Survey'

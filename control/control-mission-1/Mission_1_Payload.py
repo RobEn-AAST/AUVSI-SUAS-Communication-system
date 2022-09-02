@@ -9,7 +9,7 @@ import Payload_Drop_Module
 
 R = 6371000.0  #Earth radius in meters
 Pa = 30 #Pitch Angle in degees
-with open("/home/proxyServer/control/control-mission-1/Data.txt","r") as data:
+with open("/home/proxyServer/files/Data.txt","r") as data:
     for ln in data:
         if ln.startswith("home_lat"):
             x = ln.split(" ")
@@ -153,7 +153,7 @@ def landing_sequence(): #Create Landing Sequence
     brng = main_bearing
     alt_total = 70
     land_points_total = alt_total/10
-    land_dist_total = 27.47477419
+    land_dist_total = 350
     cmd_land = Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_LAND, 0, 0, 0, 0, 0, 0, home_lat, home_long, 0)
 
     brng = brng - 180
@@ -163,7 +163,7 @@ def landing_sequence(): #Create Landing Sequence
 
     brng = brng + 180
     alt1_land = 60
-    land_step_dist_1 = 2.679491924
+    land_step_dist_1 = 50
     dist1 = land_step_dist_1
     for i in range(3):
         xi, yi = new_waypoint(land_lat_1, land_long_1 , dist1, brng)
@@ -173,7 +173,7 @@ def landing_sequence(): #Create Landing Sequence
         cmds.add(cmd_land_i)
 
     alt2_land = 30
-    land_step_dist_2 = 5.773502692
+    land_step_dist_2 = 50
     dist2 = land_step_dist_2
     for j in range(3):
         xj, yj = new_waypoint(xi, yi, dist2, brng)
@@ -183,6 +183,7 @@ def landing_sequence(): #Create Landing Sequence
         cmds.add(cmd_land_j)
 
     cmds.add(cmd_land)
+
 
 Modified_Waypoints_file = Obs_Avoid_Module.obstacle_avoidance(waypoints_file, obstacles_file)
 Modified_Waypoints_file2 = Payload_Drop_Module.payload_drop_off(Modified_Waypoints_file,payloads_file)

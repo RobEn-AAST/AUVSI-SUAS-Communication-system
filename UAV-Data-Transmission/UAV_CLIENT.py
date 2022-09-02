@@ -121,8 +121,8 @@ if __name__ == '__main__':
         if mission[1] is None:
             continue
         else:
-            with open("missionPool/" + str(counter) + ".bin", "wb") as outfile:
-                outfile.write(pickle.dumps(mission))
+            # with open("missionPool/" + str(counter) + ".bin", "wb") as outfile:
+            #     outfile.write(pickle.dumps(mission))
             cv2.imwrite("images/" + str(counter) + ".jpeg", mission[2])
             counter += 1  
     print("finished")
