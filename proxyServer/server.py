@@ -3,9 +3,9 @@
 from __future__ import print_function
 from configparser import ConfigParser
 from interop import interop_client
-from flask import Flask, request, send_file, render_template
+from flask import Flask, request, send_file, render_template, abort
 from os import system
-
+from json import dump, loads
 config = ConfigParser()
 config.readfp(open('/home/proxyServer/config/system.config', 'r'))
 Interop_config = config["Interop"]
@@ -16,6 +16,7 @@ interopClient = interop_client(
                             username=Interop_config["username"],
                             password=Interop_config["password"])
 
+missionCounter = 0
 app = Flask(__name__)
 
 @app.route('/startmission/', methods=["POST"])
@@ -62,27 +63,35 @@ def submitMission(number):
         )
     return "success"
 
-@app.route('/getMission/<number>')
-def getMission(number):
-    return send_file("/home/proxyServer/missionPool/" + str(number) + ".bin")
+@app.route('/getMission/image/<number>')
+def getMissionImage(number):
+    if number > missionCounter:
+        return abort(404)
+    return send_file("/home/proxyServer/missions/images/" + str(number) + ".jpeg")
 
+@app.route('/getMission/geoLocation/<number>')
+def getMissionGeoLocation(number):
+    if number > missionCounter:
+        return abort(404)
+    return send_file("/home/proxyServer/missions/geolocations/" + str(number) + ".json")
+
+
+@app.route('/sendMission', methods=['POST'])
+def ReceiveStream():
+    global missionCounter
+    geoLocation = loads(request.args.get('geoLocation'))
+    image = request.files['image']
+    image.save("/home/proxyServer/missions/images/" + str(missionCounter) + ".jpeg")
+    # Save query parameters to a JSON file
+    with open("/home/proxyServer/missions/geolocations/" + str(missionCounter) + ".json", 'w') as file:
+        dump(geoLocation, file)
+    missionCounter += 1
+    return "success"
+    
+    
 @app.route('/')
 def index():
     return render_template("load_mission.html")
 
 if __name__ == "__main__":
     app.run("0.0.0.0", debug=True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-

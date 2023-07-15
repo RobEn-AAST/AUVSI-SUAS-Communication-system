@@ -15,7 +15,7 @@ services:
       - "14555:14555/udp"
       - "14550:14550/udp"
     volumes:
-      - ./logs:/home/mavproxy/logs/
+      - ./data/logs:/home/mavproxy/logs/
     networks:
       AUVSI-SUAS-Proxy-Network:
         ipv4_address: 163.20.0.10
@@ -36,7 +36,7 @@ services:
       dockerfile: dockerFiles/ProxyServer.Dockerfile
     command: python server.py 
     ports:
-      - "80:5000/tcp"
+      - "5000:5000/tcp"
     volumes:
       - ./proxyServer/server.py:/home/proxyServer/server.py
       - ./proxyServer/interop.py:/home/proxyServer/interop.py
@@ -45,6 +45,8 @@ services:
       - ./proxyServer/files:/home/proxyServer/files
       - ./proxyServer/templates:/home/proxyServer/templates
       - ./control:/home/proxyServer/control
+      - ./data/geolocations:/home/proxyServer/missions/geolocations
+      - ./data/images:/home/proxyServer/missions/images
     networks:
       AUVSI-SUAS-Proxy-Network:
         ipv4_address: 163.20.0.12
