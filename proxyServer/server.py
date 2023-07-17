@@ -5,22 +5,29 @@ from configparser import ConfigParser
 from interop import interop_client
 from flask import Flask, request, send_file, render_template, abort
 from os import system
+from os.path import exists
 from json import dump, loads
 config = ConfigParser()
 config.readfp(open('/home/proxyServer/config/system.config', 'r'))
 Interop_config = config["Interop"]
 
+interopEnabled = Interop_config["enabled"] == 1
+interopClient = None
 
-interopClient = interop_client(
-                            url=Interop_config["url"], 
-                            username=Interop_config["username"],
-                            password=Interop_config["password"])
+if interopEnabled:
+    interopClient = interop_client(
+                                url=Interop_config["url"], 
+                                username=Interop_config["username"],
+                                password=Interop_config["password"])
 
 missionCounter = 0
 app = Flask(__name__)
 
 @app.route('/startmission/', methods=["POST"])
 def startMission():
+    if interopEnabled == False:
+        return "Interop Disabled"
+    
     data = dict(request.form)
     print(data)
     waypoints, payloads, obstacles, flyZones, searchArea = interopClient.get_mission(data["mission"])
@@ -52,6 +59,9 @@ def startMission():
 
 @app.route('/submitMission/<number>', methods= ["POST"])
 def submitMission(number):
+    if interopEnabled == False:
+        return "Interop Disabled"
+    
     request.get_data()
     image = request.files["image"]
     mission = dict(request.form)
@@ -65,15 +75,17 @@ def submitMission(number):
 
 @app.route('/getMission/image/<number>')
 def getMissionImage(number):
-    if number > missionCounter:
+    path = "/home/proxyServer/missions/images/" + str(number) + ".jpeg"
+    if exists(path) == False:
         return abort(404)
-    return send_file("/home/proxyServer/missions/images/" + str(number) + ".jpeg")
+    return send_file(path)
 
 @app.route('/getMission/geoLocation/<number>')
 def getMissionGeoLocation(number):
-    if number > missionCounter:
+    path = "/home/proxyServer/missions/geolocations/" + str(number) + ".json"
+    if exists(path) == False:
         return abort(404)
-    return send_file("/home/proxyServer/missions/geolocations/" + str(number) + ".json")
+    return send_file(path)
 
 
 @app.route('/sendMission', methods=['POST'])

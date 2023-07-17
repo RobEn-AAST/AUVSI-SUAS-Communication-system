@@ -9,9 +9,10 @@ services:
     build: 
       context: .
       dockerfile: dockerFiles/MavProxy.Dockerfile
-    command: bash -c "mavproxy.py  --state-basedir=/home/mavproxy/logs/ --master=0.0.0.0:14555 --out=tcpin:0.0.0.0:5770 --out=163.20.0.11:5750 --out=163.20.0.12:5750 --out=udp:192.168.1.140:14550 --out=udp:192.168.1.130:14550 --daemon"
+    command: bash -c "mavproxy.py  --state-basedir=/home/mavproxy/logs/ --master=0.0.0.0:14555 --out=tcpin:0.0.0.0:5770 --out=tcpin:0.0.0.0:5780 --out=163.20.0.11:5750 --out=163.20.0.12:5750 --out=udpout:192.168.1.150:14550 --daemon"
     ports:
       - "5770:5770/tcp"
+      - "5780:5780/tcp"
       - "14555:14555/udp"
       - "14550:14550/udp"
     volumes:
@@ -20,6 +21,8 @@ services:
       AUVSI-SUAS-Proxy-Network:
         ipv4_address: 163.20.0.10
   interop-relay:
+    profiles:
+      - interop
     build: 
       context: .
       dockerfile: dockerFiles/InteropRelay.Dockerfile
